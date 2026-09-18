@@ -1,5 +1,7 @@
 # ChatGPT 代理助手
 
+**中文** | [English](README.en.md)
+
 **让 ChatGPT 桌面版直接走本地代理启动 —— 不用再开系统代理，也不用开 TUN 模式。**
 
 一个 460 KB 的单文件 Windows 小工具，无需安装任何运行时，界面支持浅色 / 深色 / 跟随系统。
@@ -199,7 +201,9 @@ powershell -ExecutionPolicy Bypass -File build\install.ps1   # 安装到 %LOCALA
 - 开发与验证环境：Windows 11（build 26200）+ Clash Verge Rev（mihomo，混合端口 7897）+
   ChatGPT 桌面版 26.908.4834；其它代理客户端/版本理论同理，欢迎反馈。
 
-## English TL;DR
+## English
+
+**[完整英文说明 → README.en.md](README.en.md)**
 
 A single-file Windows utility (~460 KB, no runtime to install) that makes the **ChatGPT desktop app**
 launch through your local proxy (`127.0.0.1:7897` by default) **without enabling the Windows system proxy
