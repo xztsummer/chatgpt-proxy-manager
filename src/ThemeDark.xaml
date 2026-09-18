@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色主题调色板 -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- 文字 -->
+  <SolidColorBrush x:Key="TextPrimary" Color="#FFF2F5FA" />
+  <SolidColorBrush x:Key="TextSecondary" Color="#FFA8B0BE" />
+  <SolidColorBrush x:Key="TextMuted" Color="#FF6E7787" />
+  <SolidColorBrush x:Key="DangerText" Color="#FFFFD9D9" />
+  <SolidColorBrush x:Key="OnAccentText" Color="#FFFFFFFF" />
+
+  <!-- 容器：画布带极轻微的纵向渐变（水平方向均匀，不会出现局部色块） -->
+  <LinearGradientBrush x:Key="RootBg" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="#DE161C28" Offset="0" />
+    <GradientStop Color="#D60C111B" Offset="1" />
+  </LinearGradientBrush>
+  <SolidColorBrush x:Key="RootBorderBrush" Color="#1CFFFFFF" />
+  <SolidColorBrush x:Key="CardBg" Color="#14FFFFFF" />
+  <SolidColorBrush x:Key="CardBgSoft" Color="#0BFFFFFF" />
+  <SolidColorBrush x:Key="CardBorder" Color="#1BFFFFFF" />
+
+  <!-- 叠加层与描边 -->
+  <SolidColorBrush x:Key="OverlayFaint" Color="#12FFFFFF" />
+  <SolidColorBrush x:Key="OverlaySubtle" Color="#18FFFFFF" />
+  <SolidColorBrush x:Key="OverlayMedium" Color="#1CFFFFFF" />
+  <SolidColorBrush x:Key="BorderSoft" Color="#1AFFFFFF" />
+  <SolidColorBrush x:Key="ScrollThumb" Color="#2EFFFFFF" />
+  <SolidColorBrush x:Key="RingIdle" Color="#2EFFFFFF" />
+  <SolidColorBrush x:Key="OverlayHoverColor" Color="#FFFFFFFF" />
+
+  <!-- 输入与勾选 -->
+  <SolidColorBrush x:Key="InputBg" Color="#14FFFFFF" />
+  <SolidColorBrush x:Key="InputBorder" Color="#22FFFFFF" />
+  <SolidColorBrush x:Key="InputBgFocus" Color="#1CFFFFFF" />
+  <SolidColorBrush x:Key="CheckBg" Color="#14FFFFFF" />
+  <SolidColorBrush x:Key="CheckBorder" Color="#2EFFFFFF" />
+  <SolidColorBrush x:Key="CheckBorderHover" Color="#50FFFFFF" />
+
+  <!-- 次级按钮 -->
+  <SolidColorBrush x:Key="SecondaryBg" Color="#17FFFFFF" />
+  <SolidColorBrush x:Key="SecondaryBorder" Color="#24FFFFFF" />
+  <SolidColorBrush x:Key="SecondaryBorderHover" Color="#38FFFFFF" />
+
+  <!-- 语义色 -->
+  <SolidColorBrush x:Key="Accent" Color="#FF5B8DEF" />
+  <SolidColorBrush x:Key="Success" Color="#FF3DDC97" />
+  <SolidColorBrush x:Key="Warning" Color="#FFF5B544" />
+  <SolidColorBrush x:Key="Danger" Color="#FFF87171" />
+  <SolidColorBrush x:Key="Neutral" Color="#FF7C8798" />
+
+  <!-- 状态徽章底色 -->
+  <SolidColorBrush x:Key="BadgeOk" Color="#FF2FC98A" />
+  <SolidColorBrush x:Key="BadgeWarn" Color="#FFE8A72E" />
+  <SolidColorBrush x:Key="BadgeError" Color="#FFEF6A6A" />
+  <SolidColorBrush x:Key="BadgeIdle" Color="#FF7C8798" />
+
+  <!-- 危险按钮 -->
+  <SolidColorBrush x:Key="DangerButtonBg" Color="#16F87171" />
+  <SolidColorBrush x:Key="DangerButtonBorder" Color="#33F87171" />
+  <SolidColorBrush x:Key="DangerButtonBorderHover" Color="#55F87171" />
+
+  <!-- 渐变 -->
+  <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+    <GradientStop Color="#5B8DEF" Offset="0" />
+    <GradientStop Color="#8B5CF6" Offset="1" />
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="FallbackGradient" StartPoint="0,0" EndPoint="0.9,1">
+    <GradientStop Color="#0C0F16" Offset="0" />
+    <GradientStop Color="#111726" Offset="0.55" />
+    <GradientStop Color="#0D1220" Offset="1" />
+  </LinearGradientBrush>
+  
+  <!-- 深色下投影很轻，仅让卡片与背景略微分离 -->
+  <DropShadowEffect x:Key="CardShadow" Color="#FF000000" BlurRadius="18" ShadowDepth="2"
+                    Direction="270" Opacity="0.22" RenderingBias="Quality" />
+</ResourceDictionary>

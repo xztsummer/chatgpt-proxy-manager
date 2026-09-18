@@ -1,0 +1,24 @@
+# 构建产物（发布时通过 Releases 分发，不入库）
+dist/
+*.exe
+
+# 图标由 build/make-icon.ps1 生成，可复现
+src/app.ico
+
+# 开发期截图
+dev/*.png
+dev/*.log
+
+# 用户级运行数据（正常情况下在 %LOCALAPPDATA%，这里只是兜底）
+*.user
+settings.ini
+manager.log
+crash.log
+launch.log
+
+# 编辑器/系统
+.vs/
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

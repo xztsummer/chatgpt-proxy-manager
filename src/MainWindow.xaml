@@ -1,0 +1,600 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ChatGPT 代理助手"
+        Width="1020" Height="730" MinWidth="900" MinHeight="640"
+        WindowStyle="None" AllowsTransparency="False" Background="Transparent"
+        ResizeMode="CanResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="True"
+        FontFamily="Microsoft YaHei UI, Segoe UI" FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Opacity="1" Margin="0">
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+
+  <Window.Resources>
+    <!-- 颜色全部来自主题字典（ThemeLight.xaml / ThemeDark.xaml），用 DynamicResource 以便运行时切换 -->
+
+    <!-- ============ 文字 ============ -->
+    <Style x:Key="CardTitle" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style x:Key="FieldLabel" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style x:Key="Muted" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+    </Style>
+
+    <!-- ============ 卡片 ============ -->
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource CardBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="18,16,18,16" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="Effect" Value="{DynamicResource CardShadow}" />
+    </Style>
+    <Style x:Key="Pill" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource OverlayFaint}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="8,2,8,3" />
+    </Style>
+    <Style x:Key="Chip" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource OverlayFaint}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderSoft}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="10,4,11,5" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+
+    <!-- ============ 主题切换（分段按钮） ============ -->
+    <Style x:Key="SegmentButton" TargetType="ToggleButton">
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Grid>
+              <Border x:Name="Bd" CornerRadius="6" Background="Transparent" />
+              <Border x:Name="Hover" CornerRadius="6" Background="{DynamicResource OverlayHoverColor}" Opacity="0" />
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Hover" Property="Opacity" Value="0.08" />
+              </Trigger>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource OverlayMedium}" />
+                <Setter TargetName="Hover" Property="Opacity" Value="0" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 按钮 ============ -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentText}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Bd" CornerRadius="9" Background="{DynamicResource AccentGradient}" />
+              <Border x:Name="Glow" CornerRadius="9" Background="#40000000" Opacity="0" />
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16,0,16,0" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.10" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.22" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="SecondaryButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Bd" CornerRadius="9" Background="{DynamicResource SecondaryBg}"
+                      BorderBrush="{DynamicResource SecondaryBorder}" BorderThickness="1" />
+              <Border x:Name="Glow" CornerRadius="9" Background="{DynamicResource OverlayHoverColor}" Opacity="0" />
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="14,0,14,0" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.07" />
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SecondaryBorderHover}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.13" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource DangerText}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Bd" CornerRadius="9" Background="{DynamicResource DangerButtonBg}"
+                      BorderBrush="{DynamicResource DangerButtonBorder}" BorderThickness="1" />
+              <Border x:Name="Glow" CornerRadius="9" Background="{DynamicResource Danger}" Opacity="0" />
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="14,0,14,0" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.12" />
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource DangerButtonBorderHover}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Glow" Property="Opacity" Value="0.2" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="LinkButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" CornerRadius="6" Padding="8,3,8,4" Background="Transparent" />
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource OverlaySubtle}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="CaptionButton" TargetType="Button">
+      <Setter Property="Width" Value="44" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Bd" Background="Transparent" />
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource OverlaySubtle}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="CaptionCloseButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}" />
+
+    <!-- ============ 输入框 ============ -->
+    <Style x:Key="InputBox" TargetType="TextBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Accent}" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="Padding" Value="10,0,10,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Border x:Name="Bd" CornerRadius="8" Background="{DynamicResource InputBg}"
+                    BorderBrush="{DynamicResource InputBorder}" BorderThickness="1">
+              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InputBgFocus}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 复选框 ============ -->
+    <Style x:Key="Check" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <StackPanel Orientation="Horizontal" Background="Transparent">
+              <Grid Width="17" Height="17" VerticalAlignment="Center">
+                <Border x:Name="Box" CornerRadius="5" Background="{DynamicResource CheckBg}"
+                        BorderBrush="{DynamicResource CheckBorder}" BorderThickness="1" />
+                <Path x:Name="Tick" Data="M3.5,8.6 L7,12 L13.2,4.6" Stroke="{DynamicResource OnAccentText}" StrokeThickness="2"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+              </Grid>
+              <ContentPresenter Margin="9,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentGradient}" />
+                <Setter TargetName="Box" Property="BorderBrush" Value="#00000000" />
+                <Setter TargetName="Tick" Property="Visibility" Value="Visible" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource CheckBorderHover}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 滚动条 ============ -->
+    <Style TargetType="ScrollBar">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent">
+              <Track x:Name="PART_Track" IsDirectionReversed="True">
+                <Track.Thumb>
+                  <Thumb>
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border CornerRadius="4" Background="{DynamicResource ScrollThumb}" Margin="2,0,2,0" />
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                </Track.IncreaseRepeatButton>
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                </Track.DecreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 日志条目 ============ -->
+    <Style x:Key="LogItem" TargetType="ListBoxItem">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <ContentPresenter />
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+  </Window.Resources>
+
+  <!-- ============ 窗口内容 ============ -->
+  <Grid>
+    <!-- 无 Mica 时的兜底背景 -->
+    <Border x:Name="FallbackBg" Background="{DynamicResource FallbackGradient}" />
+
+    <Border x:Name="RootBorder" CornerRadius="10" Background="{DynamicResource RootBg}"
+            BorderBrush="{DynamicResource RootBorderBrush}" BorderThickness="1">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="54" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" MinHeight="120" />
+          <RowDefinition Height="36" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== 标题栏 ===== -->
+        <Grid x:Name="TitleBar" Grid.Row="0" Background="Transparent">
+          <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+            <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource AccentGradient}">
+              <Path Data="M7,14.2 L10.6,17.6 L17.6,9.2" Stroke="{DynamicResource OnAccentText}" StrokeThickness="2.1"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+            </Border>
+            <TextBlock Text="ChatGPT 代理助手" Margin="11,0,0,0" VerticalAlignment="Center"
+                       FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+            <Border Style="{StaticResource Pill}" Margin="11,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="免系统代理 / 免 TUN" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
+            </Border>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Border x:Name="ThemeSwitch" CornerRadius="8" Background="{DynamicResource OverlayFaint}"
+                    BorderBrush="{DynamicResource BorderSoft}" BorderThickness="1" Padding="2"
+                    Margin="0,0,10,0" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal">
+                <ToggleButton x:Name="BtnThemeLight" Style="{StaticResource SegmentButton}" ToolTip="浅色主题"
+                              AutomationProperties.Name="浅色主题">
+                  <Path Data="M5.1,8 A2.9,2.9 0 1 1 10.9,8 A2.9,2.9 0 1 1 5.1,8 M8,1.3 L8,2.7 M8,13.3 L8,14.7 M1.3,8 L2.7,8 M13.3,8 L14.7,8 M3.3,3.3 L4.3,4.3 M11.7,11.7 L12.7,12.7 M12.7,3.3 L11.7,4.3 M4.3,11.7 L3.3,12.7"
+                        StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                        Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}" />
+                </ToggleButton>
+                <ToggleButton x:Name="BtnThemeDark" Style="{StaticResource SegmentButton}" ToolTip="深色主题"
+                              AutomationProperties.Name="深色主题">
+                  <Path Data="M13.6,10.4 A5.6,5.6 0 1 1 5.6,2.4 A4.5,4.5 0 0 0 13.6,10.4 Z"
+                        StrokeThickness="1.4" StrokeLineJoin="Round"
+                        Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}" />
+                </ToggleButton>
+                <ToggleButton x:Name="BtnThemeSystem" Style="{StaticResource SegmentButton}" ToolTip="跟随系统"
+                              AutomationProperties.Name="跟随系统">
+                  <Path Data="M2.4,3.4 H13.6 V10.6 H2.4 Z M5.8,13.4 H10.2 M8,10.6 V13.4"
+                        StrokeThickness="1.4" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                        Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}" />
+                </ToggleButton>
+              </StackPanel>
+            </Border>
+            <Button x:Name="BtnMin" Style="{StaticResource CaptionButton}" ToolTip="最小化" AutomationProperties.Name="最小化">
+              <Path Data="M0,0 L11,0" Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.4" />
+            </Button>
+            <Button x:Name="BtnClose" Style="{StaticResource CaptionCloseButton}" ToolTip="关闭" AutomationProperties.Name="关闭"
+                    Foreground="{DynamicResource TextPrimary}">
+              <Path Data="M0,0 L10,10 M10,0 L0,10" Stroke="{DynamicResource TextSecondary}" StrokeThickness="1.4" />
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <!-- ===== 状态主卡 ===== -->
+        <Border x:Name="HeroCard" Grid.Row="1" Style="{StaticResource Card}" Margin="20,6,20,0" Padding="22,20,22,20">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Width="74" Height="74" Margin="0,0,18,0" VerticalAlignment="Center">
+              <!-- 外圈柔光 + 实色圆盘 + 白色图标：浅色/深色下都是清晰的彩色徽章 -->
+              <Ellipse x:Name="HeroHalo" Width="74" Height="74" Stroke="{DynamicResource Neutral}" StrokeThickness="6" Opacity="0.16" />
+              <Ellipse x:Name="HeroDisc" Width="52" Height="52" Fill="{DynamicResource Neutral}" />
+              <Path x:Name="HeroGlyph" Data="M5,11 L10,16 L19,5" Stroke="{DynamicResource OnAccentText}" StrokeThickness="3"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock x:Name="HeroTitle" Text="正在检测环境…" FontSize="23" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimary}" />
+              <TextBlock x:Name="HeroSubtitle" Margin="0,8,0,0" MaxWidth="620" HorizontalAlignment="Left"
+                         Text="正在读取 ChatGPT 安装信息与代理状态" TextWrapping="Wrap"
+                         Foreground="{DynamicResource TextSecondary}" FontSize="12.5" LineHeight="19" />
+              <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                <Border Style="{StaticResource Chip}">
+                  <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="ChipAppDot" Width="7" Height="7" Fill="{DynamicResource Neutral}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                    <TextBlock x:Name="ChipAppText" Text="ChatGPT 应用" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" />
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Chip}">
+                  <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="ChipPortDot" Width="7" Height="7" Fill="{DynamicResource Neutral}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                    <TextBlock x:Name="ChipPortText" Text="代理端口" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" />
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Chip}">
+                  <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="ChipEnvDot" Width="7" Height="7" Fill="{DynamicResource Neutral}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                    <TextBlock x:Name="ChipEnvText" Text="启动配置" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </StackPanel>
+
+            <TextBlock x:Name="HeroBadge" Grid.Column="2" VerticalAlignment="Top" Text="" FontSize="11.5"
+                       Foreground="{DynamicResource TextMuted}" />
+          </Grid>
+        </Border>
+
+        <!-- ===== 配置 + 检测 ===== -->
+        <Grid Grid.Row="2" Margin="20,12,20,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="1.1*" />
+          </Grid.ColumnDefinitions>
+
+          <StackPanel Grid.Column="0" Margin="0,0,6,0">
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="代理地址" Style="{StaticResource CardTitle}" />
+                <Grid Margin="0,12,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="92" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock Text="主机" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TxtHost" Style="{StaticResource InputBox}" Text="127.0.0.1" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Text="端口" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TxtPort" Style="{StaticResource InputBox}" Text="7897" MaxLength="5" />
+                  </StackPanel>
+                </Grid>
+                <Grid Margin="0,12,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Button x:Name="BtnTest" Content="测试连通性" Height="34" Style="{StaticResource SecondaryButton}" />
+                  <TextBlock x:Name="TxtTestResult" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center"
+                             Text="尚未测试" TextTrimming="CharacterEllipsis" FontSize="12"
+                             Foreground="{DynamicResource TextMuted}" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+              <StackPanel>
+                <TextBlock Text="开启选项" Style="{StaticResource CardTitle}" />
+                <StackPanel Margin="0,13,0,0">
+                  <CheckBox x:Name="ChkShortcut" Style="{StaticResource Check}" IsChecked="True"
+                            Content="接管桌面「ChatGPT」快捷方式（自动备份原快捷方式）" />
+                  <CheckBox x:Name="ChkEnv" Style="{StaticResource Check}" IsChecked="True"
+                            Content="设置命令行环境变量 HTTP(S)_PROXY" />
+                  <CheckBox x:Name="ChkAutoLaunch" Style="{StaticResource Check}" IsChecked="True" Margin="0"
+                            Content="开启后立即启动 ChatGPT" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <Grid>
+                <TextBlock Text="环境检测" Style="{StaticResource CardTitle}" />
+                <Button x:Name="BtnRefresh" HorizontalAlignment="Right" Style="{StaticResource LinkButton}"
+                        Content="重新检测" Margin="0,-4,0,0" />
+              </Grid>
+              <StackPanel x:Name="DetList" Grid.Row="1" Margin="0,15,0,0" VerticalAlignment="Top" />
+              <Border Grid.Row="2" Margin="0,14,0,0" Padding="0,10,0,0" BorderThickness="0,1,0,0"
+                      BorderBrush="{DynamicResource BorderSoft}">
+                <TextBlock Text="以上信息均在本机读取，仅用于本机代理配置" FontSize="11"
+                           Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+              </Border>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- ===== 操作按钮 ===== -->
+        <Grid Grid.Row="3" Margin="20,14,20,0">
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="BtnEnable" Height="44" Width="150" Style="{StaticResource PrimaryButton}">
+              <StackPanel Orientation="Horizontal">
+                <Path Data="M8,2 L8,10 M4,4 A5.6,5.6 0 1 0 12,4" Stroke="{DynamicResource OnAccentText}" StrokeThickness="1.9"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" />
+                <TextBlock Text="一键开启" Margin="9,0,0,0" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button x:Name="BtnLaunch" Height="44" Width="150" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}">
+              <StackPanel Orientation="Horizontal">
+                <Path Data="M4,2 L12,7.5 L4,13 Z" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.7"
+                      StrokeLineJoin="Round" VerticalAlignment="Center" />
+                <TextBlock Text="启动 ChatGPT" Margin="9,0,0,0" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button x:Name="BtnRestore" Content="一键还原" Height="44" Width="130" Margin="10,0,0,0"
+                    Style="{StaticResource DangerButton}" />
+          </StackPanel>
+          <TextBlock x:Name="TxtActionHint" HorizontalAlignment="Right" VerticalAlignment="Center"
+                     FontSize="12" Foreground="{DynamicResource TextMuted}" />
+        </Grid>
+
+        <!-- ===== 日志 ===== -->
+        <Border Grid.Row="4" Style="{StaticResource Card}" Margin="20,14,20,0" Padding="16,13,10,10">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid>
+              <TextBlock Text="运行日志" Style="{StaticResource CardTitle}" />
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnCopyLog" Style="{StaticResource LinkButton}" Content="复制" Margin="0,-5,0,0" />
+                <Button x:Name="BtnClearLog" Style="{StaticResource LinkButton}" Content="清空" Margin="12,-5,0,0" />
+              </StackPanel>
+            </Grid>
+            <ListBox x:Name="LogList" Grid.Row="1" Margin="0,8,6,0" Background="Transparent" BorderThickness="0"
+                     ItemContainerStyle="{StaticResource LogItem}" HorizontalContentAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingStackPanel.IsVirtualizing="False">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,1.5,0,1.5">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Time}" FontFamily="Cascadia Mono, Consolas" FontSize="11"
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="{Binding Color}" FontSize="12"
+                               TextWrapping="Wrap" Margin="12,0,0,0" LineHeight="18" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </Border>
+
+        <!-- ===== 底栏 ===== -->
+        <Grid Grid.Row="5" Margin="20,8,20,8">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Grid x:Name="BusyRing" Width="14" Height="14" Margin="0,0,9,0" Visibility="Collapsed">
+              <Grid.RenderTransform>
+                <RotateTransform x:Name="BusyRotate" CenterX="7" CenterY="7" />
+              </Grid.RenderTransform>
+              <Ellipse Stroke="{DynamicResource RingIdle}" StrokeThickness="1.8" />
+              <Path Data="M7,0.6 A6.4,6.4 0 0 1 13.4,7" Stroke="{DynamicResource Accent}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" />
+            </Grid>
+            <TextBlock x:Name="TxtStatus" VerticalAlignment="Center" FontSize="12"
+                       Foreground="{DynamicResource TextMuted}" Text="就绪" />
+          </StackPanel>
+          <TextBlock x:Name="TxtVersion" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11"
+                     Foreground="{DynamicResource TextMuted}" Text="v1.0" />
+        </Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>
