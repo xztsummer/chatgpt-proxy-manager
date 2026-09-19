@@ -4,10 +4,11 @@
 
 **Launch the ChatGPT desktop app through your local proxy — no more system proxy, no more TUN mode.**
 
-A single-file Windows utility (~460 KB) with no runtime to install, and light / dark / follow-system themes.
+Available for **Windows and macOS**: the Windows version is a single-file utility (~460 KB) with no
+runtime to install; the macOS version is a native SwiftUI app. Both share the same features and visual style.
 
 [![Release](https://img.shields.io/github/v/release/xztsummer/chatgpt-proxy-manager?label=download&style=flat-square&color=4f8cff)](../../releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-4f8cff?style=flat-square)](#requirements)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20%C2%B7%20macOS%2013%2B-4f8cff?style=flat-square)](#requirements)
 [![.NET](https://img.shields.io/badge/dependency-built--in%20.NET%20Framework%204.8-8b5cf6?style=flat-square)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-3ddc97?style=flat-square)](LICENSE)
 

@@ -4,11 +4,13 @@
 
 **让 ChatGPT 桌面版直接走本地代理启动 —— 不用再开系统代理，也不用开 TUN 模式。**
 
-一个 460 KB 的单文件 Windows 小工具，无需安装任何运行时，界面支持浅色 / 深色 / 跟随系统。
+Windows 与 macOS 双平台：Windows 版是一个 460 KB 的单文件小工具（C# / WPF，无需安装任何运行时），
+macOS 版是 SwiftUI 原生应用，两者界面与功能一致，实现原理各按系统特性设计。
 
 [![Release](https://img.shields.io/github/v/release/xztsummer/chatgpt-proxy-manager?label=下载&style=flat-square&color=4f8cff)](../../releases/latest)
-[![Platform](https://img.shields.io/badge/平台-Windows%2010%20%2F%2011-4f8cff?style=flat-square)](#系统要求)
-[![.NET](https://img.shields.io/badge/依赖-系统自带%20.NET%20Framework%204.8-8b5cf6?style=flat-square)](#系统要求)
+[![Platform](https://img.shields.io/badge/平台-Windows%2010%20%2F%2011%20·%20macOS%2013%2B-4f8cff?style=flat-square)](#系统要求)
+[![.NET](https://img.shields.io/badge/Windows-系统自带%20.NET%20Framework%204.8-8b5cf6?style=flat-square)](#系统要求)
+[![SwiftUI](https://img.shields.io/badge/macOS-SwiftUI%20·%20零依赖-8b5cf6?style=flat-square)](#macos-版)
 [![License](https://img.shields.io/badge/许可-MIT-3ddc97?style=flat-square)](LICENSE)
 
 <img src="docs/themes.png" alt="浅色与深色主题" width="900">
@@ -112,6 +114,52 @@ ChatGPT 桌面版是 MSIX 打包应用（包名 `OpenAI.Codex`），内部同时
 先在程序里点「**一键还原**」（移除环境变量、删掉创建的快捷方式、恢复原始快捷方式），
 然后删除 `%LOCALAPPDATA%\ChatGPTProxyManager` 目录即可。本程序不写注册表服务、不装驱动，也不改动你的代理客户端配置。
 
+## macOS 版
+
+macOS 版是 **SwiftUI 原生应用**，界面与功能与 Windows 版一致：一键开启 / 还原、7 项环境检测、
+真实连通性测试、代理地址可改、三档主题、运行日志、命令行开关。详细说明见 [`macos/README.md`](macos/README.md)。
+
+<img src="docs/macos-theme-light.png" alt="macOS 浅色主题" width="900">
+
+**实现原理（按 macOS 重新研究，与 Windows 不同）**：mac 版 ChatGPT（bundle id `com.openai.codex`）
+与 Windows 版同源，**内核同样是 Chromium**。而 macOS 的 `open` 命令原生支持透传启动参数与环境变量，
+所以不需要 COM 激活，也不需要写注册表：
+
+```bash
+# Chromium 外壳的全部流量走本地代理
+open /Applications/ChatGPT.app --args --proxy-server=http://127.0.0.1:7897
+
+# 可选：注入环境变量，覆盖应用内非浏览器组件
+open /Applications/ChatGPT.app --env HTTPS_PROXY=http://127.0.0.1:7897 --args --proxy-server=http://127.0.0.1:7897
+```
+
+不修改系统代理、不创建 TUN 网卡；可选创建「ChatGPT（代理）」启动器到「应用程序」（复用 ChatGPT
+官方图标），双击即得以代理方式启动，原应用零改动，一键还原即清空。
+
+### 快速开始（macOS）
+
+1. 到 [Releases](../../releases/latest) 下载 `ChatGPT-Proxy-Helper-macos-arm64.zip`，解压得到
+   「ChatGPT 代理助手.app」，拖入「应用程序」；
+2. 首次打开若提示"无法验证开发者"（本程序未做代码签名与公证），在终端执行
+   `xattr -cr "/Applications/ChatGPT 代理助手.app"` 后再打开；
+3. 确认代理地址（首次运行自动探测常见端口），点「**测试连通性**」，通过后点「**一键开启**」。
+
+### 系统要求（macOS）
+
+- macOS 13+，**Apple Silicon**（发布包为 arm64 构建；Intel 芯片可在 `macos/` 下从源码构建）
+- 已安装 ChatGPT 桌面版（`/Applications/ChatGPT.app`）
+- 一个正在运行的本地代理客户端（HTTP 或 SOCKS5 混合端口）
+
+**已知限制**：ChatGPT 的「检查更新」由应用内置的 Sparkle 框架走系统网络，既不认 `--proxy-server`
+也不认环境变量 —— 需要更新 ChatGPT 时请临时开启系统代理，更新完成后再关闭（助手界面的
+「工具边界」提示会说明）。
+
+### 卸载 / 还原（macOS）
+
+先在程序里点「**一键还原**」（移除启动器与启动配置），然后删除「应用程序」里的
+「ChatGPT（代理）.app」与 `~/Library/Application Support/ChatGPTProxyHelper/` 目录即可。
+不写系统配置、不装任何东西。
+
 ## 常见问题
 
 **Q：必须用 Clash Verge 吗？**
@@ -176,6 +224,10 @@ src/
   ThemeLight.xaml    浅色调色板        ThemeDark.xaml   深色调色板
   Program.cs         入口与命令行开关
   app.manifest       逐显示器 DPI 感知、Win10/11 兼容声明
+macos/               macOS 版（SwiftUI 原生应用，独立 SwiftPM 工程）
+  Sources/           检测、启动、连通性测试、启动器管理、界面
+  scripts/           build-app.sh 一键打包 .app、生成图标
+  README.md          macOS 版详细说明（原理 / 使用 / 已知限制）
 build/
   build.ps1          一键编译（自动把源码转 UTF-8 BOM、缺图标时自动生成）
   install.ps1        安装到 %LOCALAPPDATA%
@@ -191,15 +243,24 @@ powershell -ExecutionPolicy Bypass -File build\build.ps1     # 输出 dist\ChatG
 powershell -ExecutionPolicy Bypass -File build\install.ps1   # 安装到 %LOCALAPPDATA% 并复制说明
 ```
 
+macOS 版构建（需 Xcode Command Line Tools，Swift 5.9+）：
+
+```bash
+cd macos && scripts/build-app.sh    # 输出 macos/build/ChatGPT 代理助手.app
+```
+
 ## 适用范围与已知限制
 
 - 本工具针对 **ChatGPT 桌面版（MSIX 包 `OpenAI.Codex`）**；同一个"带参数启动"的思路也可移植到其它
   MSIX 打包的 Electron 应用，需要改一下包名匹配规则。
+- **macOS 版**：发布包为 Apple Silicon (arm64) 构建；「检查更新」由 Sparkle 走系统网络，
+  更新 ChatGPT 时需临时开启系统代理（详见 [`macos/README.md`](macos/README.md) 已知限制）。
 - 需要代理客户端保持运行；端口未监听时程序会明确提示，而不是让 ChatGPT 卡住。
-- exe 未做代码签名，首次运行会触发 SmartScreen 提示。
+- exe / .app 均未做代码签名，首次运行会触发 SmartScreen / Gatekeeper 提示（README 有放行方法）。
 - 本项目与 OpenAI 无任何关联，仅使用其公开安装的桌面应用。
 - 开发与验证环境：Windows 11（build 26200）+ Clash Verge Rev（mihomo，混合端口 7897）+
-  ChatGPT 桌面版 26.908.4834；其它代理客户端/版本理论同理，欢迎反馈。
+  ChatGPT 桌面版 26.908.4834；macOS 26（Apple Silicon）+ 同一套 Clash Verge + ChatGPT 26.915.31029。
+  其它代理客户端/版本理论同理，欢迎反馈。
 
 ## English
 
@@ -214,6 +275,12 @@ through `IApplicationActivationManager` with `--proxy-server`, sets the user-lev
 bundled Rust/Node parts, and repoints your ChatGPT shortcuts at itself, so a normal double-click launches
 it proxied. It ships with environment detection, a real proxy connectivity test (HTTP CONNECT to
 `chatgpt.com:443`), one-click enable/restore (fully reversible), and light/dark/follow-system themes.
+
+**A native macOS version (SwiftUI, zero dependencies) is also included** in [`macos/`](macos/README.md):
+since the Mac ChatGPT app shares the same Chromium core, it launches the app via
+`open --args --proxy-server=…` (plus optional `--env`), keeping the system proxy and TUN off all the same.
+See the [macOS README](macos/README.md) for details and known limitations (Sparkle-based update checks
+still need the system proxy temporarily).
 
 ## 许可
 
