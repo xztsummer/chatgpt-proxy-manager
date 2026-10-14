@@ -20,7 +20,7 @@ namespace ChatGPTProxyManager
     internal static class AppConstants
     {
         public const string ProductName = "ChatGPT 代理助手";
-        public const string Version = "1.0";
+        public const string Version = "1.1";
         public const string ManagedShortcutName = "ChatGPT（本地代理）.lnk";
         public const string AppShortcutName = "ChatGPT.lnk";
         public const string PackagePrefix = "OpenAI.Codex_";
@@ -129,6 +129,7 @@ namespace ChatGPTProxyManager
         public bool OptTakeOverShortcut = true;
         public bool OptSetEnvVars = true;
         public bool OptAutoLaunch = true;
+        public bool OptSystemProxyFrame = true;   // 启动帧内临时系统代理（给登录跳转用）
         public string Theme = "light";    // light / dark / system
 
         public string Endpoint { get { return ProxyHost + ":" + ProxyPort.ToString(); } }
@@ -158,6 +159,7 @@ namespace ChatGPTProxyManager
                         else if (k == "optTakeOverShortcut") s.OptTakeOverShortcut = v == "1";
                         else if (k == "optSetEnvVars") s.OptSetEnvVars = v == "1";
                         else if (k == "optAutoLaunch") s.OptAutoLaunch = v == "1";
+                        else if (k == "optSystemProxyFrame") s.OptSystemProxyFrame = v == "1";
                         else if (k == "theme" && v.Length > 0) s.Theme = v;
                     }
                 }
@@ -178,6 +180,7 @@ namespace ChatGPTProxyManager
                 sb.AppendLine("optTakeOverShortcut=" + (OptTakeOverShortcut ? "1" : "0"));
                 sb.AppendLine("optSetEnvVars=" + (OptSetEnvVars ? "1" : "0"));
                 sb.AppendLine("optAutoLaunch=" + (OptAutoLaunch ? "1" : "0"));
+                sb.AppendLine("optSystemProxyFrame=" + (OptSystemProxyFrame ? "1" : "0"));
                 sb.AppendLine("theme=" + Theme);
                 File.WriteAllText(Paths.SettingsFile, sb.ToString(), Encoding.UTF8);
             }
@@ -237,11 +240,175 @@ namespace ChatGPTProxyManager
         }
     }
 
+    public static class SystemProxyHelper
+    {
+        private const string KeyPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
+
+        /// <summary>临时打开 WinINET 系统代理（给默认浏览器的登录跳转用）</summary>
+        public static void Enable(string host, int port)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(KeyPath))
+                {
+                    if (key == null) return;
+                    key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
+                    key.SetValue("ProxyServer", host + ":" + port.ToString(), RegistryValueKind.String);
+                    key.SetValue("ProxyOverride", DefaultProxyOverride(), RegistryValueKind.String);
+                }
+                Refresh();
+                LogBus.Write("已临时打开系统代理（仅限本次启动窗口，稍后自动关闭）", LogKind.Detail);
+            }
+            catch (Exception ex)
+            {
+                LogBus.Write("临时系统代理打开失败：" + ex.Message, LogKind.Warn);
+            }
+        }
+
+        /// <summary>关闭系统代理（不动用户的其它代理覆盖项，只关开关）</summary>
+        public static void Disable()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(KeyPath, true))
+                {
+                    if (key == null) return;
+                    object enabled = key.GetValue("ProxyEnable");
+                    // 只在“开关确实是我们开的”时才关，避免误关用户手动开的代理
+                    key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
+                }
+                Refresh();
+                LogBus.Write("已恢复系统代理为关闭", LogKind.Detail);
+            }
+            catch (Exception ex)
+            {
+                LogBus.Write("系统代理恢复失败：" + ex.Message, LogKind.Warn);
+            }
+        }
+
+        private static string DefaultProxyOverride()
+        {
+            string existing = null;
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(KeyPath))
+                {
+                    if (key != null) existing = key.GetValue("ProxyOverride") as string;
+                }
+            }
+            catch { }
+            if (!string.IsNullOrEmpty(existing)) return existing;
+            return "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.2?.*;172.30.*;172.31.*;192.168.*;<local>";
+        }
+
+        /// <summary>广播设置变化，让浏览器/新进程立刻感知</summary>
+        private static void Refresh()
+        {
+            try
+            {
+                IntPtr result;
+                Native.SendMessageTimeout(new IntPtr(0xffff), 0x001A, IntPtr.Zero, "Internet Settings",
+                    0x0002, 3000, out result);
+                // WinINET 全局刷新（立即生效于控制面板级别设置）
+                Native.InternetSetOption(IntPtr.Zero, 39, IntPtr.Zero, 0);   // INTERNET_OPTION_SETTINGS_CHANGED
+                Native.InternetSetOption(IntPtr.Zero, 37, IntPtr.Zero, 0);   // INTERNET_OPTION_REFRESH
+            }
+            catch { }
+        }
+
+        /// <summary>读取当前 WinINET 系统代理开关状态</summary>
+        public static bool IsEnabled()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(KeyPath))
+                {
+                    if (key != null)
+                    {
+                        object v = key.GetValue("ProxyEnable");
+                        return v != null && Convert.ToInt32(v) == 1;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        /// <summary>记录“启动前系统代理本就是关着的”这一事实，供还原判断使用</summary>
+        private static bool _wasOffWhenFrameOpened = true;
+
+        public static void ResetDisabledFlag(bool proxyWasOff)
+        {
+            _wasOffWhenFrameOpened = proxyWasOff;
+        }
+
+        /// <summary>仅刷新通知（不修改开关），用于用户本来开着系统代理的场景</summary>
+        public static void RefreshOnly()
+        {
+            Refresh();
+        }
+
+        /// <summary>
+        /// 打开临时系统代理并启动自动收尾守护。
+        /// 与启动流程解耦：无论后续走启动还是激活已运行实例，到期都会恢复为打开前的状态。
+        /// </summary>
+        private static bool _closChildSpawned;
+
+        /// <summary>
+        /// 打开临时系统代理并安排自动收尾。
+        /// 收尾由独立进程执行：启动器在 --launch 模式下会立即退出，进程内线程会随进程终止，
+        /// 因此用 `--sysproxy-timeout` 子进程兜底，保证无论调用方生命周期如何都会恢复原状态。
+        /// </summary>
+        public static void OpenWithAutoClose(string host, int port, int windowSeconds)
+        {
+            bool wasOff = !IsEnabled();
+            Enable(host, port);
+            try
+            {
+                if (!_closChildSpawned)
+                {
+                    _closChildSpawned = true;
+                    string exe = Paths.ExePath;
+                    var psi = new ProcessStartInfo(exe, "--sysproxy-timeout " + host + " " + port.ToString() +
+                        " " + windowSeconds.ToString());
+                    psi.UseShellExecute = false;
+                    psi.CreateNoWindow = true;
+                    Process.Start(psi);
+                }
+                else
+                {
+                    bool wasOffForThread = wasOff;
+                    ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(windowSeconds));
+                        if (wasOffForThread) Disable();
+                        else RefreshOnly();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                LogBus.Write("临时系统代理收尾进程启动失败，改用进程内延时：" + ex.Message, LogKind.Warn);
+                bool wasOffForThread = wasOff;
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(windowSeconds));
+                    if (wasOffForThread) Disable();
+                    else RefreshOnly();
+                });
+            }
+        }
+    }
+
     internal static class Native
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, IntPtr wParam, string lParam,
             uint flags, uint timeout, out IntPtr result);
+
+        [DllImport("wininet.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool InternetSetOption(IntPtr hInternet, int option, IntPtr buffer, int bufferLength);
 
         [DllImport("dwmapi.dll")]
         public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
@@ -840,9 +1007,17 @@ namespace ChatGPTProxyManager
         }
 
         /// <summary>带代理参数启动 ChatGPT，并确保窗口正常显示</summary>
-        public static void Launch(AppInfo app, string proxyUrl)
+        public static void Launch(AppInfo app, string proxyUrl, Settings settings)
         {
             string switchArg = "--proxy-server=" + proxyUrl;
+            // 修复“点登录不跳浏览器”：新版（26.1007+）的登录页在默认浏览器里打开，
+            // 而 Edge/Chrome 只认系统代理、不认环境变量——系统代理关闭时浏览器直连会被墙，
+            // 登录就卡住。因此在启动帧内临时打开 WinINET 系统代理（同一本地端口），
+            // 20 秒后自动恢复原状态；与后续启动路径完全解耦，任何分支都会按时收回。
+            if (settings == null || settings.OptSystemProxyFrame)
+            {
+                SystemProxyHelper.OpenWithAutoClose(settings.ProxyHost, settings.ProxyPort, 20);
+            }
             if (app != null && app.IsPackaged)
             {
                 AppActivatorActivate(app.Aumid, switchArg);
@@ -1134,7 +1309,7 @@ namespace ChatGPTProxyManager
             }
 
             LogBus.Write("正在以代理 " + settings.Endpoint + " 启动 ChatGPT…", LogKind.Info);
-            AppLauncher.Launch(app, settings.ProxyUrl);
+            AppLauncher.Launch(app, settings.ProxyUrl, settings);
             LogBus.Write("ChatGPT 已启动，Chromium 网络栈走 " + settings.ProxyUrl, LogKind.Success);
         }
     }

@@ -1,4 +1,4 @@
-# ChatGPT Proxy Assistant
+﻿# ChatGPT Proxy Assistant
 
 [中文](README.md) | **English**
 
@@ -49,6 +49,9 @@ And MSIX packaged-app shortcuts **cannot carry launch arguments**. That is the r
    `ALL_PROXY` / `NO_PROXY` for the bundled Rust / Node components.
 3. **Turn the launcher into the shortcut.** All ChatGPT shortcuts point at this program, which performs the
    steps above silently when started with `--launch` — so "double-click ChatGPT" *is* "start ChatGPT proxied".
+4. **Sign-in redirect fallback.** Newer builds open the login page in the default browser, which only reads
+   the system proxy. The tool temporarily enables it during the 20-second launch window (with an
+   out-of-process timer that guarantees reversion).
 4. **Wrap it in a reversible GUI.** Environment detection, one-click enable, one-click restore, an editable
    proxy address and a real connectivity test — with a revert path for every change.
 
@@ -70,6 +73,7 @@ And MSIX packaged-app shortcuts **cannot carry launch arguments**. That is the r
 | 🔍 **Environment detection** | Seven live checks: ChatGPT version & install type, which process owns the proxy port, system proxy, TUN, env vars, shortcuts, app running state |
 | 🌐 **Editable proxy + real test** | Host/port are editable and remembered; "Test connectivity" performs an HTTP `CONNECT` to `chatgpt.com:443` instead of merely probing the port |
 | 🎨 **Three themes** | Light (default) / dark / follow system; the choice is remembered and live-follows Windows theme changes |
+| 🔑 **Sign-in redirect fallback** | Newer builds open the sign-in page in the default browser, and Edge/Chrome only honour the system proxy. On launch the tool briefly enables the system proxy (a **20-second window** restored by a separate helper process) so the browser redirect isn't blocked — everything reverts automatically, invisible to other apps |
 | 🖥️ **Native-feeling UI** | Borderless window with Windows 11 Mica material, custom title bar and icon; light theme uses a uniform canvas with soft card shadows |
 | 📜 **Run log** | Every action is logged, one-click copy, history kept in `manager.log` — no guessing when diagnosing |
 | ⌨️ **CLI switches** | `--launch` / `--enable` / `--restore` / `--test` / `--detect` for scripting or integration |
@@ -131,6 +135,12 @@ still uses the proxy via the launch argument.
 **My pinned taskbar icon still opens the un-proxied app.**
 Taskbar pins point at the original application and cannot be rewritten by third-party programs.
 Unpin it and pin the "ChatGPT (Local Proxy)" shortcut instead.
+
+**Why does the tool briefly enable the system proxy when launching?**
+Newer ChatGPT builds open the sign-in page in the default browser, and browsers only read the system proxy
+(not environment variables), which stays disabled. During the 20-second launch window the tool enables the
+system proxy (same local port); a separate helper process reverts it automatically, so other software is
+unaffected and the system proxy is off again afterwards.
 
 **Does it modify my proxy client?**
 No. It only writes user-level environment variables and creates shortcuts. System proxy and TUN stay

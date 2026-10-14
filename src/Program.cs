@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Windows;
+using System.Threading;
 
 namespace ChatGPTProxyManager
 {
@@ -51,6 +52,20 @@ namespace ChatGPTProxyManager
             }
 
             Settings settings = Settings.Load();
+
+            // 内部开关：临时系统代理窗口的独立收尾进程（由 OpenWithAutoClose 拉起）
+            if (args.Length >= 3 && string.Equals(args[0], "--sysproxy-timeout", StringComparison.OrdinalIgnoreCase))
+            {
+                string host = args[1];
+                int port, secs;
+                int.TryParse(args[2], out port);
+                if (!int.TryParse(args[3], out secs)) secs = 20;
+                if (secs < 3) secs = 3;
+                if (secs > 180) secs = 180;
+                Thread.Sleep(TimeSpan.FromSeconds(secs));
+                SystemProxyHelper.Disable();
+                return 0;
+            }
 
             // 命令行模式（便于脚本调用与自动化验证）
             if (enableMode)
@@ -132,7 +147,7 @@ namespace ChatGPTProxyManager
                 }
 
                 LogBus.Write("以代理 " + settings.Endpoint + " 启动 ChatGPT（快捷方式启动）", LogKind.Info);
-                AppLauncher.Launch(app, settings.ProxyUrl);
+                AppLauncher.Launch(app, settings.ProxyUrl, settings);
                 return null;
             }
             catch (Exception ex)
