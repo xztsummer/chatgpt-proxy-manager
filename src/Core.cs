@@ -20,7 +20,7 @@ namespace ChatGPTProxyManager
     internal static class AppConstants
     {
         public const string ProductName = "ChatGPT 代理助手";
-        public const string Version = "1.1";
+        public const string Version = "1.2";
         public const string ManagedShortcutName = "ChatGPT（本地代理）.lnk";
         public const string AppShortcutName = "ChatGPT.lnk";
         public const string PackagePrefix = "OpenAI.Codex_";
@@ -314,6 +314,25 @@ namespace ChatGPTProxyManager
                 Native.InternetSetOption(IntPtr.Zero, 37, IntPtr.Zero, 0);   // INTERNET_OPTION_REFRESH
             }
             catch { }
+        }
+
+        /// <summary>系统代理是否已被打开且指向本工具配置的端口（还原时的判定依据）</summary>
+        public static bool IsOurServerProxyOn(string host, int port)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(KeyPath))
+                {
+                    if (key == null) return false;
+                    object enabled = key.GetValue("ProxyEnable");
+                    if (enabled == null || Convert.ToInt32(enabled) != 1) return false;
+                    string server = key.GetValue("ProxyServer") as string;
+                    if (string.IsNullOrEmpty(server)) return false;
+                    return string.Equals(server.Trim(), host + ":" + port.ToString(),
+                        StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch { return false; }
         }
 
         /// <summary>读取当前 WinINET 系统代理开关状态</summary>
@@ -728,6 +747,36 @@ namespace ChatGPTProxyManager
             string target = Target(lnkPath);
             return !string.IsNullOrEmpty(target) &&
                    string.Equals(target, exePath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 判断 lnk 是否指向本程序族启动器（同文件名 ChatGPTProxyManager.exe + --launch 参数）。
+        /// 不要求路径等于当前进程的 exe —— 用户可能用旧位置的程序开启、再用新位置的程序还原。
+        /// </summary>
+        public static bool PointsToOurLauncher(string lnkPath)
+        {
+            string target = Target(lnkPath);
+            if (string.IsNullOrEmpty(target)) return false;
+            try
+            {
+                string name = Path.GetFileName(target);
+                if (!string.Equals(name, "ChatGPTProxyManager.exe", StringComparison.OrdinalIgnoreCase)) return false;
+                object shell = NewShell();
+                try
+                {
+                    object lnk = shell.GetType().InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null,
+                        shell, new object[] { lnkPath });
+                    object args = lnk.GetType().InvokeMember("Arguments", BindingFlags.GetProperty, null, lnk, null);
+                    Marshal.ReleaseComObject(lnk);
+                    string a = (args as string) ?? string.Empty;
+                    return a.IndexOf("--launch", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(shell);
+                }
+            }
+            catch { return false; }
         }
 
         /// <summary>判断是否为“指向打包应用的原始快捷方式”（这类快捷方式没有 TargetPath）</summary>
@@ -1226,9 +1275,17 @@ namespace ChatGPTProxyManager
             RemoveIfOurs(Paths.DesktopManagedLnk, "桌面快捷方式（本地代理）");
             RemoveIfOurs(Paths.StartMenuManagedLnk, "开始菜单快捷方式（本地代理）");
 
+            // 系统代理：仅当其指向本工具所配端口（多数情况是启动帧遗留）时才关闭，
+            // 用户自己配置的其它代理不受影响
+            if (SystemProxyHelper.IsOurServerProxyOn(settings.ProxyHost, settings.ProxyPort))
+            {
+                SystemProxyHelper.Disable();
+                LogBus.Write("已关闭由本程序临时打开的系统代理", LogKind.Success);
+            }
+
             try
             {
-                if (ShellShortcut.PointsTo(Paths.DesktopAppLnk, Paths.ExePath))
+                if (ShellShortcut.PointsTo(Paths.DesktopAppLnk, Paths.ExePath) || ShellShortcut.PointsToOurLauncher(Paths.DesktopAppLnk))
                 {
                     if (File.Exists(Paths.ShortcutBackup))
                     {
@@ -1267,7 +1324,7 @@ namespace ChatGPTProxyManager
         {
             try
             {
-                if (ShellShortcut.PointsTo(lnkPath, Paths.ExePath))
+                if (ShellShortcut.PointsTo(lnkPath, Paths.ExePath) || ShellShortcut.PointsToOurLauncher(lnkPath))
                 {
                     File.Delete(lnkPath);
                     LogBus.Write("已删除" + label, LogKind.Detail);
